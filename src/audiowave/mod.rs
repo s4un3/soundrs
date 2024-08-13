@@ -23,8 +23,8 @@ impl AudioWave {
         yclip: Option<Float>,
     ) -> Option<AudioWave> {
         let latency = latency.unwrap_or(0.0);
-        let samplerate = samplerate.unwrap_or(0);
-        let yclip = yclip.unwrap_or(0.0);
+        let samplerate = samplerate.unwrap_or(44100);
+        let yclip = yclip.unwrap_or(1.0);
         let waveform = waveform.unwrap_or(Function::Function(|t: Float| (2.0 * PI * t).sin()));
 
         let f_samplerate: Float = samplerate as Float;
