@@ -5,7 +5,7 @@ use crate::function::Function;
 use utils::{clip_value, scale_wave};
 
 #[derive(Clone)]
-struct AudioWave {
+pub struct AudioWave {
     significance: u32,
     samplerate: u32,
     duration: Float, // TODO: maybe use `std::time::Duration`?
@@ -13,7 +13,7 @@ struct AudioWave {
 }
 
 impl AudioWave {
-    fn new(
+    pub fn new(
         freq: Function,
         amp: Function,
         duration: Float,
@@ -62,7 +62,7 @@ impl AudioWave {
         })
     }
 
-    fn add(self, other: AudioWave) -> Option<AudioWave> {
+    pub fn add(self, other: AudioWave) -> Option<AudioWave> {
         if self.samplerate != other.samplerate {
             return None;
         }
@@ -78,19 +78,19 @@ impl AudioWave {
         })
     }
 
-    fn append(self, other: AudioWave) -> Option<AudioWave> {
+    pub fn append(self, other: AudioWave) -> Option<AudioWave> {
         todo!()
     }
 
-    fn change_sample_rate(self, new_sample_rate: u32) -> AudioWave {
+    pub fn change_sample_rate(self, new_sample_rate: u32) -> AudioWave {
         todo!()
     }
 
-    fn play(&self) {
+    pub fn play(&self) {
         todo!()
     }
 
-    fn export_wav(&self, path: &std::path::Path) -> Result<(), std::io::Error> {
+    pub fn export_wav(&self, path: &std::path::Path) -> Result<(), std::io::Error> {
         todo!()
     }
 }
