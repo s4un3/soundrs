@@ -14,7 +14,7 @@ impl Error for WavImportError {}
 
 #[derive(Clone)]
 pub struct AudioWave {
-    significance: u32,
+    significance: Float,
     samplerate: u32,
     duration: Float, // TODO: maybe use `std::time::Duration`?
     wave: Vec<Float>,
@@ -30,21 +30,21 @@ impl AudioWave {
         waveform: Option<Function>,
         yclip: Option<Float>,
     ) -> Option<AudioWave> {
-        let latency = latency.unwrap_or(0.0);
-        let samplerate = samplerate.unwrap_or(44100);
-        let yclip = yclip.unwrap_or(1.0);
-        let waveform = waveform.unwrap_or(Function::Function(|t: Float| (2.0 * PI * t).sin()));
+        let latency: Float = latency.unwrap_or(0.0);
+        let samplerate: Float = samplerate.unwrap_or(44100);
+        let yclip: Float = yclip.unwrap_or(1.0);
+        let waveform: Float = waveform.unwrap_or(Function::Function(|t: Float| (2.0 * PI * t).sin()));
 
         let f_samplerate: Float = samplerate as Float;
-        let computed_capacity = f_samplerate * duration;
+        let computed_capacity: Float = f_samplerate * duration;
         let veccapacity: usize = computed_capacity.ceil() as usize;
         let mut wave: Vec<Float> = Vec::with_capacity(veccapacity);
 
-        let duration = duration.abs();
-        let latency = latency.abs();
-        let yclip = yclip.abs();
+        let duration: Float = duration.abs();
+        let latency: Float = latency.abs();
+        let yclip: Float = yclip.abs();
 
-        let significance: u32 = 1;
+        let significance: Float = 1.0;
 
         let mut y: Float = 0.0;
         let mut t: Float = 0.0;
@@ -74,10 +74,10 @@ impl AudioWave {
         if self.samplerate != other.samplerate {
             return None;
         }
-        let significance = self.significance + other.significance;
-        let wave = utils::sum_waves(self.wave, other.wave);
-        let duration = self.duration.max(other.duration);
-        let samplerate = self.samplerate;
+        let significance: Float = self.significance + other.significance;
+        let wave: Vec<Float> = utils::sum_waves(self.wave, other.wave);
+        let duration: Float = self.duration.max(other.duration);
+        let samplerate: Float = self.samplerate;
         Some(AudioWave {
             significance,
             samplerate,
