@@ -46,7 +46,7 @@ impl AudioWave {
 
         let significance: u32 = 1;
 
-        let mut Y: Float = 0.0;
+        let mut y: Float = 0.0;
         let mut t: Float = 0.0;
         let dt: Float = 1.0 / samplerate as Float;
 
@@ -58,8 +58,8 @@ impl AudioWave {
             }
         }
         while t < duration {
-            Y += freq.get(t) * dt;
-            wave.push(clip_value(waveform.get(Y) * amp.get(t), yclip));
+            y += freq.get(t) * dt;
+            wave.push(clip_value(waveform.get(y) * amp.get(t), yclip));
             t += dt;
         }
         Some(AudioWave {
