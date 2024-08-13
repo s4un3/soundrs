@@ -1,64 +1,57 @@
 mod utils;
 
+use crate::definitions::{Float, PI};
 use crate::function::Function;
-use num::{abs, traits::FloatConst, Float, Signed};
-use std::{time::Duration, vec};
-use utils::{clip_wave, scale_wave};
-
-pub trait Number: Float + Signed + FloatConst + std::ops::AddAssign {}
-impl<T> Number for T where T: Float + Signed + FloatConst + std::ops::AddAssign {}
+use utils::{clip_value, scale_wave};
 
 #[derive(Clone)]
-struct AudioWave<N: Number> {
+struct AudioWave {
     significance: u32,
     samplerate: u32,
-    duration: N, // TODO: maybe use `std::time:Duration`?
-    wave: Vec<N>,
+    duration: Float, // TODO: maybe use `std::time::Duration`?
+    wave: Vec<Float>,
 }
 
-impl<N: Number> AudioWave<N> {
+impl AudioWave {
     fn new(
-        freq: Function<N>,
-        amp: Function<N>,
-        duration: N,
-        latency: Option<N>,
+        freq: Function,
+        amp: Function,
+        duration: Float,
+        latency: Option<Float>,
         samplerate: Option<u32>,
-        waveform: Option<Function<N>>,
-        yclip: Option<N>,
-    ) -> Option<AudioWave<N>> {
-        let latency = latency.unwrap_or(N::zero());
-        let samplerate = samplerate.unwrap_or(num::zero());
-        let yclip = yclip.unwrap_or(N::zero());
-        let waveform = waveform.unwrap_or(Function::Function(|t: N| {
-            (N::from(2).expect("2 should be a valid Float") * N::PI() * t).sin()
-        }));
+        waveform: Option<Function>,
+        yclip: Option<Float>,
+    ) -> Option<AudioWave> {
+        let latency = latency.unwrap_or(0.0);
+        let samplerate = samplerate.unwrap_or(0);
+        let yclip = yclip.unwrap_or(0.0);
+        let waveform = waveform.unwrap_or(Function::Function(|t: Float| (2.0 * PI * t).sin()));
 
-        let f_samplerate: N = N::from(samplerate)?;
+        let f_samplerate: Float = samplerate as Float;
         let computed_capacity = f_samplerate * duration;
-        let veccapacity: usize = computed_capacity.to_usize()?;
-        let mut wave: Vec<N> = Vec::with_capacity(veccapacity);
+        let veccapacity: usize = computed_capacity.ceil() as usize;
+        let mut wave: Vec<Float> = Vec::with_capacity(veccapacity);
 
-        let duration = abs(duration);
-        let latency = abs(latency);
-        let yclip = abs(yclip);
+        let duration = duration.abs();
+        let latency = latency.abs();
+        let yclip = yclip.abs();
 
         let significance: u32 = 1;
 
-        let mut Y: N = N::zero();
-        let mut t: N = N::zero();
-        let dt: N = N::from(1).expect("1 should be a valid Float")
-            / N::from(samplerate).expect("The samplerate should be convertable to float");
+        let mut Y: Float = 0.0;
+        let mut t: Float = 0.0;
+        let dt: Float = 1.0 / samplerate as Float;
 
-        if latency > N::zero() {
+        if latency > 0.0 {
             t = -latency;
-            while t < N::zero() {
-                wave.push(N::zero());
+            while t < 0.0 {
+                wave.push(0.0);
                 t += dt;
             }
         }
         while t < duration {
-            Y += freq.get(&t) * dt;
-            wave.push(clip_wave(&(waveform.get(&Y) * amp.get(&t)), &yclip));
+            Y += freq.get(t) * dt;
+            wave.push(clip_value(waveform.get(Y) * amp.get(t), yclip));
             t += dt;
         }
         Some(AudioWave {
@@ -69,7 +62,7 @@ impl<N: Number> AudioWave<N> {
         })
     }
 
-    fn add(self, other: AudioWave<N>) -> Option<AudioWave<N>> {
+    fn add(self, other: AudioWave) -> Option<AudioWave> {
         if self.samplerate != other.samplerate {
             return None;
         }
@@ -85,11 +78,11 @@ impl<N: Number> AudioWave<N> {
         })
     }
 
-    fn append(self, other: AudioWave<N>) -> Option<AudioWave<N>> {
+    fn append(self, other: AudioWave) -> Option<AudioWave> {
         todo!()
     }
 
-    fn change_sample_rate(self, new_sample_rate: u32) -> AudioWave<N> {
+    fn change_sample_rate(self, new_sample_rate: u32) -> AudioWave {
         todo!()
     }
 

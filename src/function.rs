@@ -1,16 +1,15 @@
-use num::{Float, Num};
-use crate::audiowave::Number;
+use crate::definitions::Float;
 
-pub enum Function<T: Number> {
-    Const(T),
-    Function(fn(T) -> T),
+pub enum Function {
+    Const(Float),
+    Function(fn(Float) -> Float),
 }
 
-impl<T: Number> Function<T> {
-    pub fn get(&self, t: &T) -> T {
+impl Function {
+    pub fn get(&self, t: Float) -> Float {
         match self {
             Function::Const(c) => *c,
-            Function::Function(f) => f(*t),
+            Function::Function(f) => f(t),
         }
     }
 }
