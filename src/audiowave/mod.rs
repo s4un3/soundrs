@@ -1,8 +1,16 @@
 mod utils;
 
+use std::error::Error;
 use crate::definitions::{Float, PI};
 use crate::function::Function;
 use utils::{clip_value, scale_wave};
+
+enum WavImportError {
+    IOErr(std::io::Error),
+    ParseError(str)
+}
+
+impl Error for WavImportError {}
 
 #[derive(Clone)]
 pub struct AudioWave {
@@ -91,6 +99,10 @@ impl AudioWave {
     }
 
     pub fn export_wav(&self, path: &std::path::Path) -> Result<(), std::io::Error> {
+        todo!()
+    }
+
+    pub fn from_wav(path: &std::path::Path) -> Result<Self, WavImportError> {
         todo!()
     }
 }
