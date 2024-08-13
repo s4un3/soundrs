@@ -3,6 +3,7 @@
 mod audiowave;
 mod definitions;
 mod function;
+mod parser;
 
 fn main() {
     println!("amomus.");
