@@ -15,9 +15,6 @@ pub fn sum_waves(this: Vec<Float>, other: Vec<Float>) -> Vec<Float> {
 }
 
 /// Scales the wave vector with a significance factor.
-///
-/// Returns `Some(Vec<N>)` on success,
-/// otherwise `None` (if cast from `u32` to `N` failed).
 pub fn scale_wave(this: Vec<Float>, c: Float) -> Vec<Float> {
     this.into_iter().map(|x| x * c).collect()
 }
