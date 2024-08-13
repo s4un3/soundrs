@@ -86,8 +86,23 @@ impl AudioWave {
         })
     }
 
-    pub fn append(self, other: AudioWave) -> Option<AudioWave> {
-        todo!()
+    pub fn append(self, other: AudioWave, new_significance: Option<Float>) -> Option<AudioWave> {
+        if self.samplerate != other.samplerate {
+            return None;
+        }
+
+        let new_significance: Float = new_significance.unwrap_or(1.0);
+        
+        let mut first_wave: Vec<Float> = scale_wave(self.wave, new_significance / self.significance);
+        let second_wave: Vec<Float> = scale_wave(other.wave, new_significance / other.significance);
+        first_wave.extend(second_wave.into_iter());
+        
+        Some(AudioWave {
+            significance: new_significance,
+            samplerate: self.samplerate,
+            duration: self.duration + other.duration,
+            wave: first_wave,
+        })
     }
 
     pub fn change_sample_rate(self, new_sample_rate: u32) -> AudioWave {
