@@ -1,13 +1,24 @@
 mod utils;
 
-use std::error::Error;
 use crate::definitions::{Float, PI};
 use crate::function::Function;
+use std::error::Error;
+use std::fmt::Display;
 use utils::{clip_value, scale_wave};
 
-enum WavImportError {
+#[derive(Debug)]
+pub enum WavImportError {
     IOErr(std::io::Error),
-    ParseError(str)
+    ParseError(String),
+}
+
+impl Display for WavImportError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WavImportError::IOErr(e) => write!(f, "{}", e),
+            WavImportError::ParseError(s) => write!(f, "Error importing wav: {}", s),
+        }
+    }
 }
 
 impl Error for WavImportError {}
@@ -31,9 +42,10 @@ impl AudioWave {
         yclip: Option<Float>,
     ) -> Option<AudioWave> {
         let latency: Float = latency.unwrap_or(0.0);
-        let samplerate: Float = samplerate.unwrap_or(44100);
+        let samplerate: u32 = samplerate.unwrap_or(44100);
         let yclip: Float = yclip.unwrap_or(1.0);
-        let waveform: Float = waveform.unwrap_or(Function::Function(|t: Float| (2.0 * PI * t).sin()));
+        let waveform: Function =
+            waveform.unwrap_or(Function::Function(|t: Float| (2.0 * PI * t).sin()));
 
         let f_samplerate: Float = samplerate as Float;
         let computed_capacity: Float = f_samplerate * duration;
@@ -77,7 +89,7 @@ impl AudioWave {
         let significance: Float = self.significance + other.significance;
         let wave: Vec<Float> = utils::sum_waves(self.wave, other.wave);
         let duration: Float = self.duration.max(other.duration);
-        let samplerate: Float = self.samplerate;
+        let samplerate = self.samplerate;
         Some(AudioWave {
             significance,
             samplerate,
@@ -92,11 +104,12 @@ impl AudioWave {
         }
 
         let new_significance: Float = new_significance.unwrap_or(1.0);
-        
-        let mut first_wave: Vec<Float> = scale_wave(self.wave, new_significance / self.significance);
+
+        let mut first_wave: Vec<Float> =
+            scale_wave(self.wave, new_significance / self.significance);
         let second_wave: Vec<Float> = scale_wave(other.wave, new_significance / other.significance);
         first_wave.extend(second_wave.into_iter());
-        
+
         Some(AudioWave {
             significance: new_significance,
             samplerate: self.samplerate,
