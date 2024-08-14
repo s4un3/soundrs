@@ -142,6 +142,51 @@ pub fn str_is_whitespace_or_empty(s: &String) -> bool {
     true
 }
 
+pub enum VoiceContent {
+    Raw(Vec<String>),
+    Processed(Vec<(String, Float)>),
+}
+
+pub struct Voice {
+    pub contents: VoiceContent,
+    bpm: Float,
+    tuning: Float,
+    default_duration: Float,
+    default_octave: Float,
+    intensity: Float,
+    pub waiting: String
+}
+impl Voice {
+    pub fn get_time(mut self) {
+        let content: Vec<String>;
+        match self.contents {
+            VoiceContent::Raw(r) => content = r,
+            VoiceContent::Processed(_) => return,
+        }
+        let mut processed:Vec<(String, Float)> = Vec::new();
+        for line in content{
+            let words = split_by_whitespace(&line);
+            let possibly_a_note = &words[1];
+            let nullstr = &("".to_owned());
+            let lastword = words.last().unwrap_or(nullstr);
+            let mut beats: Float = 0.0;
+
+            if line.starts_with("glissando") || line.starts_with("trill") || note_to_semitone(possibly_a_note, Some(4)).is_some(){
+                let _lastword = lastword;
+                match _lastword.parse::<Float>(){
+                    Ok(v) => beats = v,
+                    Err(_) => beats = self.default_duration,
+                }
+            }
+            processed.push((line, beats));
+        }
+        self.contents = VoiceContent::Processed(processed);
+    }
+    pub fn get_audio(self){
+        todo!()
+    }
+}
+
 /// If syntax error is found, returns None
 /// Each element in the vector corresponds to one voice and each voice is split by lines
 pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
