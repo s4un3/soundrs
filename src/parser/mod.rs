@@ -144,14 +144,14 @@ pub fn str_is_whitespace_or_empty(s: &str) -> bool {
 
 /// If syntax error is found, returns None
 /// Each element in the vector corresponds to one voice and each voice is split by lines
-pub fn preprocess(text: &str) -> Option<Vec<Vec<&str>>> {
+pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
     let voices = text.split('%');
-    let mut chunks: Vec<Vec<&str>> = Vec::new();
-    let mut sections: HashMap<String, Vec<&str>, _> = HashMap::new();
+    let mut chunks: Vec<Vec<String>> = Vec::new();
+    let mut sections: HashMap<String, Vec<String>, _> = HashMap::new();
     let mut onsection = false;
     let mut current_section: String = "".to_owned();
     for voice in voices {
-        let mut voicevec: Vec<&str> = Vec::new();
+        let mut voicevec: Vec<String> = Vec::new();
         for mut line in voice.split(';') {
             if str_is_whitespace_or_empty(line) {
                 continue;
@@ -192,7 +192,7 @@ pub fn preprocess(text: &str) -> Option<Vec<Vec<&str>>> {
                             }
                         }
                         for _ in 0..repetitions {
-                            voicevec.extend(v);
+                            voicevec.extend(v.clone());
                         }
                     }
                     None => return None,
@@ -202,14 +202,13 @@ pub fn preprocess(text: &str) -> Option<Vec<Vec<&str>>> {
                     return None;
                 }
                 if let Some(x) = sections.get_mut(&current_section) {
-                    (*x).push(line);
+                    (*x).push(line.to_owned());
                 }
             } else {
-                voicevec.push(line);
+                voicevec.push(line.to_owned());
             }
         }
         chunks.push(voicevec);
     }
     Some(chunks)
 }
-
