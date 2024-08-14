@@ -28,7 +28,7 @@ pub struct AudioWave {
     significance: Float,
     samplerate: u32,
     duration: Float, // TODO: maybe use `std::time::Duration`?
-    wave: Vec<Float>,
+    pub wave: Vec<Float>,
 }
 
 impl AudioWave {
