@@ -8,7 +8,7 @@ pub enum Semitone {
     Rest,
 }
 
-pub fn note_to_semitone(note: &str, default_octave: Option<u8>) -> Option<Semitone> {
+pub fn note_to_semitone(note: &String, default_octave: Option<u8>) -> Option<Semitone> {
     if note == "_" {
         Some(Semitone::Rest);
     };
@@ -107,7 +107,7 @@ pub fn note_to_semitone(note: &str, default_octave: Option<u8>) -> Option<Semito
     Some(Semitone::Semitone(s))
 }
 
-pub fn split_by_whitespace(text: &str) -> Vec<String> {
+pub fn split_by_whitespace(text: &String) -> Vec<String> {
     let mut result = Vec::new();
     let mut current_word = String::new();
 
@@ -130,7 +130,7 @@ pub fn split_by_whitespace(text: &str) -> Vec<String> {
     result
 }
 
-pub fn str_is_whitespace_or_empty(s: &str) -> bool {
+pub fn str_is_whitespace_or_empty(s: &String) -> bool {
     if s.is_empty() {
         return true;
     }
@@ -153,7 +153,7 @@ pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
     for voice in voices {
         let mut voicevec: Vec<String> = Vec::new();
         for mut line in voice.split(';') {
-            if str_is_whitespace_or_empty(line) {
+            if str_is_whitespace_or_empty(&line.to_string()) {
                 continue;
             }
             line = line.trim_matches(char::is_whitespace);
@@ -166,7 +166,7 @@ pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
                     return None;
                 }
                 onsection = true;
-                let aux = split_by_whitespace(line);
+                let aux = split_by_whitespace(&line.to_string());
                 let section_name = aux[1].replace("", "");
                 if sections.contains_key(&section_name) {
                     return None;
@@ -179,7 +179,7 @@ pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
                 }
                 onsection = false;
             } else if line.starts_with("jump") {
-                let aux = split_by_whitespace(line);
+                let aux = split_by_whitespace(&line.to_string());
                 let section_name = aux[1].replace("", "");
                 match sections.get(&section_name) {
                     Some(v) => {
