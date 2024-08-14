@@ -1,6 +1,6 @@
 use crate::audiowave::AudioWave;
 use crate::definitions::Float;
-use std::iter::Rev;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum Semitone {
@@ -106,3 +106,110 @@ pub fn note_to_semitone(note: &str, default_octave: Option<u8>) -> Option<Semito
     }
     Some(Semitone::Semitone(s))
 }
+
+pub fn split_by_whitespace(text: &str) -> Vec<String> {
+    let mut result = Vec::new();
+    let mut current_word = String::new();
+
+    for ch in text.chars() {
+        if ch.is_whitespace() {
+            if !current_word.is_empty() {
+                result.push(current_word.clone());
+                current_word.clear();
+            }
+        } else {
+            current_word.push(ch);
+        }
+    }
+
+    // Push the last word if there is one
+    if !current_word.is_empty() {
+        result.push(current_word);
+    }
+
+    result
+}
+
+pub fn str_is_whitespace_or_empty(s: &str) -> bool {
+    if s.is_empty() {
+        return true;
+    }
+    for ch in s.chars().into_iter() {
+        if !ch.is_whitespace() {
+            return false;
+        }
+    }
+    true
+}
+
+/// If syntax error is found, returns None
+/// Each element in the vector corresponds to one voice and each voice is split by lines
+pub fn preprocess(text: &str) -> Option<Vec<Vec<&str>>> {
+    let voices = text.split('%');
+    let mut chunks: Vec<Vec<&str>> = Vec::new();
+    let mut sections: HashMap<String, Vec<&str>, _> = HashMap::new();
+    let mut onsection = false;
+    let mut current_section: String = "".to_owned();
+    for voice in voices {
+        let mut voicevec: Vec<&str> = Vec::new();
+        for mut line in voice.split(';') {
+            if str_is_whitespace_or_empty(line) {
+                continue;
+            }
+            line = line.trim_matches(char::is_whitespace);
+
+            if line.starts_with("$") {
+                continue;
+            }
+            if line.starts_with("section") {
+                if onsection {
+                    return None;
+                }
+                onsection = true;
+                let aux = split_by_whitespace(line);
+                let section_name = aux[1].replace("", "");
+                if sections.contains_key(&section_name) {
+                    return None;
+                }
+                current_section = section_name.to_owned();
+                sections.insert(section_name, Vec::new());
+            } else if line.starts_with("end") {
+                if !onsection {
+                    return None;
+                }
+                onsection = false;
+            } else if line.starts_with("jump") {
+                let aux = split_by_whitespace(line);
+                let section_name = aux[1].replace("", "");
+                match sections.get(&section_name) {
+                    Some(v) => {
+                        let mut repetitions: u32 = 1;
+                        if aux.len() >= 3 {
+                            let rep: Result<u32, _> = aux[2].replace("", "").parse();
+                            match rep {
+                                Ok(u) => repetitions = u,
+                                Err(_) => return None,
+                            }
+                        }
+                        for _ in 0..repetitions {
+                            voicevec.extend(v);
+                        }
+                    }
+                    None => return None,
+                }
+            } else if onsection {
+                if current_section.is_empty() {
+                    return None;
+                }
+                if let Some(x) = sections.get_mut(&current_section) {
+                    (*x).push(line);
+                }
+            } else {
+                voicevec.push(line);
+            }
+        }
+        chunks.push(voicevec);
+    }
+    Some(chunks)
+}
+
