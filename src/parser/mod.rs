@@ -154,7 +154,7 @@ pub struct Voice {
     default_duration: Float,
     default_octave: Float,
     intensity: Float,
-    pub waiting: String
+    pub waiting: Option<String>
 }
 impl Voice {
     pub fn get_time(&mut self) {
@@ -182,7 +182,11 @@ impl Voice {
         }
         self.contents = VoiceContent::Processed(processed);
     }
-    pub fn get_audio(self){
+    pub fn get_audio(&mut self) -> Option<AudioWave>{
+        if self.waiting.is_some(){
+            return None
+        }
+        
         todo!()
     }
 }
