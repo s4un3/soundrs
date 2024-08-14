@@ -157,10 +157,10 @@ pub struct Voice {
     pub waiting: String
 }
 impl Voice {
-    pub fn get_time(mut self) {
+    pub fn get_time(&mut self) {
         let content: Vec<String>;
-        match self.contents {
-            VoiceContent::Raw(r) => content = r,
+        match &self.contents {
+            VoiceContent::Raw(r) => content = r.to_vec(),
             VoiceContent::Processed(_) => return,
         }
         let mut processed:Vec<(String, Float)> = Vec::new();
