@@ -33,9 +33,9 @@ pub struct AudioWave {
 
 impl AudioWave {
     pub fn new(
-        freq: Function,
-        amp: Function,
-        duration: Float,
+        freq: &Function,
+        amp: &Function,
+        duration: &Float,
         latency: Option<Float>,
         samplerate: Option<u32>,
         waveform: Option<Function>,
@@ -117,6 +117,14 @@ impl AudioWave {
             duration: self.duration + other.duration,
             wave: first_wave,
         })
+    }
+
+    pub fn get_samplerate(&self) -> u32 {
+        self.samplerate
+    }
+
+    pub fn get_duration(&self) -> Float {
+        self.duration
     }
 
     pub fn change_sample_rate(self, new_sample_rate: u32) -> AudioWave {
