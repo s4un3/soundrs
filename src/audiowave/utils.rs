@@ -30,13 +30,3 @@ pub fn clip_value(x: Float, upper_lower_boundary: Float) -> Float {
         x
     }
 }
-
-pub fn turn_wave_to_fn(wave: Vec<Float>, samplerate: Option<u32>)-> Function{
-    let samplerate = samplerate.unwrap_or(44100);
-    let seclen = (wave.len() as Float)/(samplerate as Float);
-    Function::Function(Box::new(move |t: Float| -> Float {
-        let mut t = ((t % seclen) + seclen) % seclen;
-        t *= samplerate as Float;
-        wave[t as usize]
-    }))
-}
