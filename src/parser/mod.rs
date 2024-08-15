@@ -154,7 +154,7 @@ pub struct Voice {
     default_duration: Float,
     default_octave: Float,
     intensity: Float,
-    pub waiting: Option<String>
+    pub waiting: Option<String>,
 }
 impl Voice {
     pub fn get_time(&mut self) {
@@ -163,42 +163,53 @@ impl Voice {
             VoiceContent::Raw(r) => content = r.to_vec(),
             VoiceContent::Processed(_) => return,
         }
-        let mut processed:Vec<(String, Float)> = Vec::new();
-        for line in content{
+        let mut processed: Vec<(String, Float)> = Vec::new();
+        for line in content {
             let words = split_by_whitespace(&line);
             let possibly_a_note = &words[1];
             let nullstr = &("".to_owned());
             let lastword = words.last().unwrap_or(nullstr);
             let mut seconds: Float = 0.0;
 
-            if line.starts_with("glissando") || line.starts_with("trill") || note_to_semitone(possibly_a_note, Some(4)).is_some(){
+            if line.starts_with("glissando")
+                || line.starts_with("trill")
+                || note_to_semitone(possibly_a_note, Some(4)).is_some()
+            {
                 let _lastword = lastword;
-                match _lastword.parse::<Float>(){
-                    Ok(v) => seconds = v*60.0/self.bpm,
-                    Err(_) => seconds = self.default_duration*60.0/self.bpm,
+                match _lastword.parse::<Float>() {
+                    Ok(v) => seconds = v * 60.0 / self.bpm,
+                    Err(_) => seconds = self.default_duration * 60.0 / self.bpm,
                 }
             }
             processed.push((line, seconds));
         }
         self.contents = VoiceContent::Processed(processed);
     }
-    pub fn get_audio(&mut self) -> Option<(AudioWave, Option<String>)>{
-        if self.waiting.is_some(){
-            return None
+    pub fn get_audio(&mut self) -> Option<(AudioWave, Option<String>)> {
+        if self.waiting.is_some() {
+            return None;
         }
-        match &self.contents{
+        match &self.contents {
             VoiceContent::Raw(_) => return None,
             VoiceContent::Processed(p) => {
-                for line in p{
-                    if line.0.starts_with("bpm"){todo!()}
-                    else if line.0.starts_with("tuning"){todo!()}
-                    else if line.0.starts_with("duration"){todo!()}
-                    else if line.0.starts_with("octave"){todo!()}
-                    else if line.0.starts_with("intensity"){todo!()}
-                    else if line.0.starts_with("wait"){todo!()}
-                    else if line.0.starts_with("sync"){todo!()}
+                for line in p {
+                    if line.0.starts_with("bpm") {
+                        todo!()
+                    } else if line.0.starts_with("tuning") {
+                        todo!()
+                    } else if line.0.starts_with("duration") {
+                        todo!()
+                    } else if line.0.starts_with("octave") {
+                        todo!()
+                    } else if line.0.starts_with("intensity") {
+                        todo!()
+                    } else if line.0.starts_with("wait") {
+                        todo!()
+                    } else if line.0.starts_with("sync") {
+                        todo!()
+                    }
                 }
-            },
+            }
         }
         todo!()
     }
