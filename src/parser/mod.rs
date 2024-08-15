@@ -245,7 +245,7 @@ impl Voice {
 
 /// If syntax error is found, returns None
 /// Each element in the vector corresponds to one voice and each voice is split by lines
-pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
+pub fn preprocess(text: String) -> Result<Vec<Vec<String>>, String> {
     let voices = text.split('%');
     let mut chunks: Vec<Vec<String>> = Vec::new();
     let mut sections: HashMap<String, Vec<String>, _> = HashMap::new();
@@ -264,19 +264,19 @@ pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
             }
             if line.starts_with("section") {
                 if onsection {
-                    return None;
+                    return Err(format!("Invalid syntax on line: {}\nAlready on a section", line));
                 }
                 onsection = true;
                 let aux = split_by_whitespace(&line.to_string());
                 let section_name = aux[1].replace("", "");
                 if sections.contains_key(&section_name) {
-                    return None;
+                    return Err(format!("Invalid syntax on line: {}\nSection '{}' already defined (or being defined)", line, section_name));
                 }
                 current_section = section_name.to_owned();
                 sections.insert(section_name, Vec::new());
             } else if line.starts_with("end") {
                 if !onsection {
-                    return None;
+                    return Err(format!("Invalid syntax on line: {}\nNo section to end", line));
                 }
                 onsection = false;
             } else if line.starts_with("jump") {
@@ -289,18 +289,18 @@ pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
                             let rep: Result<u32, _> = aux[2].replace("", "").parse();
                             match rep {
                                 Ok(u) => repetitions = u,
-                                Err(_) => return None,
+                                Err(e) => return Err(format!("Invalid syntax on line: {}\n{}", line,e)),
                             }
                         }
                         for _ in 0..repetitions {
                             voicevec.extend(v.clone());
                         }
                     }
-                    None => return None,
+                    None => return Err(format!("Error on line: {}\nNo section named '{}'", line, section_name)),
                 }
             } else if onsection {
                 if current_section.is_empty() {
-                    return None;
+                    return Err(format!("Error on line: {}\nCannot insert data on unnamed section",line));
                 }
                 if let Some(x) = sections.get_mut(&current_section) {
                     (*x).push(line.to_owned());
@@ -311,5 +311,5 @@ pub fn preprocess(text: String) -> Option<Vec<Vec<String>>> {
         }
         chunks.push(voicevec);
     }
-    Some(chunks)
+    Ok(chunks)
 }
