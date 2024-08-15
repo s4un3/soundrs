@@ -45,7 +45,7 @@ impl AudioWave {
         let samplerate: u32 = samplerate.unwrap_or(44100);
         let yclip: Float = yclip.unwrap_or(1.0);
         let waveform: Function =
-            waveform.unwrap_or(Function::Function(|t: Float| (2.0 * PI * t).sin()));
+            waveform.unwrap_or(Function::Function(Box::new(|t: Float| (2.0 * PI * t).sin())));
 
         let f_samplerate: Float = samplerate as Float;
         let computed_capacity: Float = f_samplerate * duration;

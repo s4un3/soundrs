@@ -2,7 +2,7 @@ use crate::definitions::Float;
 
 pub enum Function {
     Const(Float),
-    Function(fn(Float) -> Float),
+    Function(Box<dyn Fn(Float) -> Float>),
 }
 
 impl Function {
