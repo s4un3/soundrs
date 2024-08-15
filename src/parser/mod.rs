@@ -175,7 +175,7 @@ impl Voice {
         let mut processed: Vec<(String, Float)> = Vec::new();
         for line in content {
             let words = split_by_whitespace(&line);
-            let possibly_a_note = &words[1];
+            let possibly_a_note = &words[0];
             let nullstr = &("".to_owned());
             let lastword = words.last().unwrap_or(nullstr);
             let mut seconds: Float = 0.0;
@@ -234,7 +234,7 @@ impl Voice {
                     } else if words[0]=="wait" {
                         self.waiting=Some(words[1].clone());
                         return Ok(Some( (audio, None) ));
-                    } else if line.0.starts_with("sync") {
+                    } else if words[0]=="sync" {
                         return Ok(Some( (audio, Some(words[1].clone())) ))
                     }
                     p.remove(0);
