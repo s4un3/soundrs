@@ -9,7 +9,7 @@ pub enum Semitone {
     Rest,
 }
 
-pub fn note_to_semitone(note: &String, default_octave: Option<u8>) -> Option<Semitone> {
+pub fn note_to_semitone(note: &String, default_octave: &Option<u8>) -> Option<Semitone> {
     if note == "_" {
         Some(Semitone::Rest);
     };
@@ -108,6 +108,23 @@ pub fn note_to_semitone(note: &String, default_octave: Option<u8>) -> Option<Sem
     Some(Semitone::Semitone(s))
 }
 
+pub fn get_freq_value(string: &String, octave: &u8, tuning: &Float) -> Result<Float, String> {
+    if string.ends_with("Hz") {
+        match string.replace("Hz", "").parse::<Float>() {
+            Ok(v) => return Ok(v),
+            Err(e) => return Err(format!("Error: '{}' is not a valid number", string)),
+        };
+    } else {
+        match note_to_semitone(string, &Some(*octave)) {
+            Some(v) => match v {
+                Semitone::Semitone(x) => Ok(tuning * (2.0 as Float).powf(x / (12 as Float))),
+                Semitone::Rest => Ok(0.0),
+            },
+            None => return Err(format!("Could not understand '{}' as a note name", string)),
+        }
+    }
+}
+
 pub fn split_by_whitespace(text: &String) -> Vec<String> {
     let mut result = Vec::new();
     let mut current_word = String::new();
@@ -158,13 +175,13 @@ pub struct Voice {
     pub waiting: Option<String>,
 }
 impl Voice {
-    pub fn initialize(&mut self){
-        self.bpm=120.0;
-        self.tuning=440.0;
-        self.default_duration=1.0;
-        self.default_octave=4;
-        self.intensity=1.0;
-        self.waiting=None;
+    pub fn initialize(&mut self) {
+        self.bpm = 120.0;
+        self.tuning = 440.0;
+        self.default_duration = 1.0;
+        self.default_octave = 4;
+        self.intensity = 1.0;
+        self.waiting = None;
     }
     pub fn get_time(&mut self) {
         let content: Vec<String>;
@@ -175,14 +192,14 @@ impl Voice {
         let mut processed: Vec<(String, Float)> = Vec::new();
         for line in content {
             let words = split_by_whitespace(&line);
-            let possibly_a_note = &words[0];
+            let possibly_a_note = &words[1];
             let nullstr = &("".to_owned());
             let lastword = words.last().unwrap_or(nullstr);
             let mut seconds: Float = 0.0;
 
             if line.starts_with("glissando")
                 || line.starts_with("trill")
-                || note_to_semitone(possibly_a_note, Some(4)).is_some()
+                || note_to_semitone(possibly_a_note, &Some(4)).is_some()
             {
                 let _lastword = lastword;
                 match _lastword.parse::<Float>() {
@@ -198,51 +215,238 @@ impl Voice {
         if self.waiting.is_some() {
             return Ok(None);
         }
-        let mut audio: Option<AudioWave> = None;
+        let mut audio: AudioWave = AudioWave::new(
+            &Function::Const(0.0),
+            &Function::Const(0.0),
+            &0.0,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("Should be able to create empty wave");
         match &mut self.contents {
             VoiceContent::Raw(_) => return Ok(None),
             VoiceContent::Processed(ref mut p) => {
                 let clonep = p.clone();
-                for i in 0..p.len(){
-                    let line = &clonep[i];
-                    let words = split_by_whitespace(&line.0);
-                    if words[0]=="bpm" {
-                        match words[1].parse::<Float>(){
-                            Ok(v) => self.bpm=v,
-                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
-                        };
-                    } else if words[0]=="tuning" {
-                        match words[1].parse::<Float>(){
-                            Ok(v) => self.tuning=v,
-                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
-                        };
-                    } else if words[0]=="duration" {
-                        match words[1].parse::<Float>(){
-                            Ok(v) => self.default_duration=v,
-                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
-                        };
-                    } else if words[0]=="octave" {
-                        match words[1].parse::<u8>(){
-                            Ok(v) => self.default_octave=v,
-                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
-                        };
-                    } else if words[0]=="intensity" {
-                        match words[1].parse::<Float>(){
-                            Ok(v) => self.intensity=v,
-                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
-                        };
-                    } else if words[0]=="wait" {
-                        self.waiting=Some(words[1].clone());
-                        return Ok(Some( (audio, None) ));
-                    } else if words[0]=="sync" {
-                        return Ok(Some( (audio, Some(words[1].clone())) ))
-                    }
+                for i in 0..p.len() {
+                    let line = clonep[i].clone();
                     p.remove(0);
-                    todo!()
+                    let words = split_by_whitespace(&line.0);
+                    if words[0] == "bpm" {
+                        match words[1].parse::<Float>() {
+                            Ok(v) => self.bpm = v,
+                            Err(e) => {
+                                return Err(format!("Invalid syntax at line: {}\n{}", line.0, e))
+                            }
+                        };
+                    } else if words[0] == "tuning" {
+                        match words[1].parse::<Float>() {
+                            Ok(v) => self.tuning = v,
+                            Err(e) => {
+                                return Err(format!("Invalid syntax at line: {}\n{}", line.0, e))
+                            }
+                        };
+                    } else if words[0] == "duration" {
+                        match words[1].parse::<Float>() {
+                            Ok(v) => self.default_duration = v,
+                            Err(e) => {
+                                return Err(format!("Invalid syntax at line: {}\n{}", line.0, e))
+                            }
+                        };
+                    } else if words[0] == "octave" {
+                        match words[1].parse::<u8>() {
+                            Ok(v) => self.default_octave = v,
+                            Err(e) => {
+                                return Err(format!("Invalid syntax at line: {}\n{}", line.0, e))
+                            }
+                        };
+                    } else if words[0] == "intensity" {
+                        match words[1].parse::<Float>() {
+                            Ok(v) => self.intensity = v,
+                            Err(e) => {
+                                return Err(format!("Invalid syntax at line: {}\n{}", line.0, e))
+                            }
+                        };
+                    } else if words[0] == "wait" {
+                        self.waiting = Some(words[1].clone());
+                        return Ok(Some((Some(audio), None)));
+                    } else if words[0] == "sync" {
+                        return Ok(Some((Some(audio), Some(words[1].clone()))));
+                    } else if words[0] == "glissando" {
+                        let line_replicate = line.clone();
+                        let line_replicate2 = line.clone();
+                        let line_replicate3 = line;
+                        let mut first_note: Float = 0.0;
+                        let mut last_note: Float = 0.0;
+                        match get_freq_value(&words[1], &self.default_octave, &self.tuning) {
+                            Ok(v) => {
+                                if v == 0.0 {
+                                    return Err(
+                                        "Error: rests cannot be part of a glissando".to_owned()
+                                    );
+                                }
+                                first_note = v;
+                            }
+                            Err(e) => return Err(e),
+                        }
+                        match get_freq_value(&words[2], &self.default_octave, &self.tuning) {
+                            Ok(v) => {
+                                if v == 0.0 {
+                                    return Err(
+                                        "Error: rests cannot be part of a glissando".to_owned()
+                                    );
+                                }
+                                last_note = v;
+                            }
+                            Err(e) => return Err(e),
+                        }
+                        let f = {
+                            let _first_note = first_note;
+                            let _last_note = last_note;
+                            let _line = line_replicate;
+                            move |t: Float| -> Float {
+                                _first_note * ((_last_note / _first_note).powf(t / _line.1))
+                            }
+                        };
+                        match AudioWave::new(
+                            &Function::Function(Box::new(f)),
+                            &Function::Const(self.intensity),
+                            &line_replicate2.1,
+                            None,
+                            None,
+                            None,
+                            None,
+                        ) {
+                            Some(v) => {
+                                audio.clone().append(v, Some(1.0));
+                                return Ok(Some((Some(audio), None)));
+                            }
+                            None => {
+                                return Err(format!(
+                                    "Error: failed to generate wave corresponding to line: {}",
+                                    line_replicate3.0
+                                ))
+                            }
+                        };
+                    } else if words[0] == "trill" {
+                        let mut first_note: Float = 0.0;
+                        let mut second_note: Float = 0.0;
+                        match get_freq_value(&words[1], &self.default_octave, &self.tuning) {
+                            Ok(v) => {
+                                first_note = v;
+                            }
+                            Err(e) => return Err(e),
+                        }
+                        match get_freq_value(&words[2], &self.default_octave, &self.tuning) {
+                            Ok(v) => {
+                                second_note = v;
+                            }
+                            Err(e) => return Err(e),
+                        }
+                        let mut parts: u32 = 1;
+                        match &words[3].parse::<u32>() {
+                            Ok(v) => {
+                                parts = *v;
+                            }
+                            Err(e) => {
+                                return Err(format!("Invalid syntax at line: {}\n{}", line.0, e))
+                            }
+                        };
+                        let first_audio = AudioWave::new(
+                            &Function::Const(first_note),
+                            &Function::Const(self.intensity),
+                            &(line.1 / (parts as Float)),
+                            None,
+                            None,
+                            None,
+                            None,
+                        );
+                        let second_audio = AudioWave::new(
+                            &Function::Const(second_note),
+                            &Function::Const(self.intensity),
+                            &(line.1 / (parts as Float)),
+                            None,
+                            None,
+                            None,
+                            None,
+                        );
+                        let first_audio_as_some: AudioWave;
+                        let second_audio_as_some: AudioWave;
+                        match first_audio {
+                            Some(v) => {
+                                first_audio_as_some = v;
+                            }
+                            None => {
+                                return Err(format!(
+                                    "Error: failed to generate wave corresponding to line: {}",
+                                    line.0
+                                ))
+                            }
+                        }
+                        match second_audio {
+                            Some(v) => {
+                                second_audio_as_some = v;
+                            }
+                            None => {
+                                return Err(format!(
+                                    "Error: failed to generate wave corresponding to line: {}",
+                                    line.0
+                                ))
+                            }
+                        }
+
+                        let mut is_first = true;
+                        for _ in 0..parts {
+                            if is_first {
+                                audio = audio.clone().append(first_audio_as_some.clone(), Some(1.0)).expect("Waves generated by this module should always have a samplerate of 44.1kHz");
+                            } else {
+                                audio = audio.clone().append(second_audio_as_some.clone(), Some(1.0)).expect("Waves generated by this module should always have a samplerate of 44.1kHz");
+                            }
+                            is_first = !is_first;
+                        }
+                        return Ok(Some((Some(audio), None)));
+                    } else {
+                        let mut line_audio = AudioWave::new(
+                            &Function::Const(0.0),
+                            &Function::Const(0.0),
+                            &0.0,
+                            None,
+                            None,
+                            None,
+                            None,
+                        )
+                        .expect("Should be able to create empty wave");
+                        for i in 0..line.0.len() {
+                            if words[i] == "|".to_owned() {
+                                continue;
+                            };
+                            match words[i].parse::<u32>() {
+                                Ok(_) => continue,
+                                Err(_) => (),
+                            }
+                            match get_freq_value(&words[i], &self.default_octave, &self.tuning) {
+                                Ok(v) => {
+                                    match AudioWave::new(&Function::Const(v), &Function::Const(self.intensity), &line.1, None, None, None, None){
+                                        Some(u) => line_audio = line_audio.clone().add(u).expect("Waves generated by this module should always have a samplerate of 44.1kHz"),
+                                        None => return Err(format!("Error: failed to generate wave corresponding to line: {}",line.0)),
+                                    };
+                                }
+                                Err(e) => {
+                                    return Err(format!(
+                                        "Error: failed to generate wave corresponding to line: {}",
+                                        line.0
+                                    ))
+                                }
+                            };
+                        }
+                        audio = audio.clone().append(line_audio,Some(1.0)).expect("Waves generated by this module should always have a samplerate of 44.1kHz");
+                        return Ok(Some((Some(audio), None)))
+                    }
                 }
             }
         }
-        todo!()
+        return Err("Unable to understand text".to_owned())
     }
 }
 
@@ -267,7 +471,10 @@ pub fn preprocess(text: String) -> Result<Vec<Vec<String>>, String> {
             }
             if line.starts_with("section") {
                 if onsection {
-                    return Err(format!("Invalid syntax on line: {}\nAlready on a section", line));
+                    return Err(format!(
+                        "Invalid syntax on line: {}\nAlready on a section",
+                        line
+                    ));
                 }
                 onsection = true;
                 let aux = split_by_whitespace(&line.to_string());
@@ -279,7 +486,10 @@ pub fn preprocess(text: String) -> Result<Vec<Vec<String>>, String> {
                 sections.insert(section_name, Vec::new());
             } else if line.starts_with("end") {
                 if !onsection {
-                    return Err(format!("Invalid syntax on line: {}\nNo section to end", line));
+                    return Err(format!(
+                        "Invalid syntax on line: {}\nNo section to end",
+                        line
+                    ));
                 }
                 onsection = false;
             } else if line.starts_with("jump") {
@@ -292,18 +502,28 @@ pub fn preprocess(text: String) -> Result<Vec<Vec<String>>, String> {
                             let rep: Result<u32, _> = aux[2].replace("", "").parse();
                             match rep {
                                 Ok(u) => repetitions = u,
-                                Err(e) => return Err(format!("Invalid syntax on line: {}\n{}", line,e)),
+                                Err(e) => {
+                                    return Err(format!("Invalid syntax on line: {}\n{}", line, e))
+                                }
                             }
                         }
                         for _ in 0..repetitions {
                             voicevec.extend(v.clone());
                         }
                     }
-                    None => return Err(format!("Error on line: {}\nNo section named '{}'", line, section_name)),
+                    None => {
+                        return Err(format!(
+                            "Error on line: {}\nNo section named '{}'",
+                            line, section_name
+                        ))
+                    }
                 }
             } else if onsection {
                 if current_section.is_empty() {
-                    return Err(format!("Error on line: {}\nCannot insert data on unnamed section",line));
+                    return Err(format!(
+                        "Error on line: {}\nCannot insert data on unnamed section",
+                        line
+                    ));
                 }
                 if let Some(x) = sections.get_mut(&current_section) {
                     (*x).push(line.to_owned());
