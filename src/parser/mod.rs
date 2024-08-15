@@ -194,46 +194,46 @@ impl Voice {
         }
         self.contents = VoiceContent::Processed(processed);
     }
-    pub fn get_audio(&mut self) -> Option<(Option<AudioWave>, Option<String>)> {
+    pub fn get_audio(&mut self) -> Result<Option<(Option<AudioWave>, Option<String>)>, String> {
         if self.waiting.is_some() {
-            return None;
+            return Ok(None);
         }
         let mut audio: Option<AudioWave> = None;
         match &self.contents {
-            VoiceContent::Raw(_) => return None,
+            VoiceContent::Raw(_) => return Ok(None),
             VoiceContent::Processed(p) => {
                 for line in p {
                     let words = split_by_whitespace(&line.0);
                     if words[0]=="bpm" {
                         match words[1].parse::<Float>(){
                             Ok(v) => self.bpm=v,
-                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
                         };
                     } else if words[0]=="tuning" {
                         match words[1].parse::<Float>(){
                             Ok(v) => self.tuning=v,
-                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
                         };
                     } else if words[0]=="duration" {
                         match words[1].parse::<Float>(){
                             Ok(v) => self.default_duration=v,
-                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
                         };
                     } else if words[0]=="octave" {
                         match words[1].parse::<u8>(){
                             Ok(v) => self.default_octave=v,
-                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
                         };
                     } else if words[0]=="intensity" {
                         match words[1].parse::<Float>(){
                             Ok(v) => self.intensity=v,
-                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                            Err(e) => return Err(format!("Invalid syntax at line: {}\n{}", line.0, e)),
                         };
                     } else if words[0]=="wait" {
                         self.waiting=Some(words[1].clone());
-                        return Some( (audio, None) );
+                        return Ok(Some( (audio, None) ));
                     } else if line.0.starts_with("sync") {
-                        return Some( (audio, Some(words[1].clone())) )
+                        return Ok(Some( (audio, Some(words[1].clone())) ))
                     }
                     todo!()
                 }
