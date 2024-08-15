@@ -182,11 +182,24 @@ impl Voice {
         }
         self.contents = VoiceContent::Processed(processed);
     }
-    pub fn get_audio(&mut self) -> Option<AudioWave>{
+    pub fn get_audio(&mut self) -> Option<(AudioWave, Option<String>)>{
         if self.waiting.is_some(){
             return None
         }
-        
+        match &self.contents{
+            VoiceContent::Raw(_) => return None,
+            VoiceContent::Processed(p) => {
+                for line in p{
+                    if line.0.starts_with("bpm"){todo!()}
+                    else if line.0.starts_with("tuning"){todo!()}
+                    else if line.0.starts_with("duration"){todo!()}
+                    else if line.0.starts_with("octave"){todo!()}
+                    else if line.0.starts_with("intensity"){todo!()}
+                    else if line.0.starts_with("wait"){todo!()}
+                    else if line.0.starts_with("sync"){todo!()}
+                }
+            },
+        }
         todo!()
     }
 }
