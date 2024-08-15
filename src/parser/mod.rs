@@ -169,16 +169,16 @@ impl Voice {
             let possibly_a_note = &words[1];
             let nullstr = &("".to_owned());
             let lastword = words.last().unwrap_or(nullstr);
-            let mut beats: Float = 0.0;
+            let mut seconds: Float = 0.0;
 
             if line.starts_with("glissando") || line.starts_with("trill") || note_to_semitone(possibly_a_note, Some(4)).is_some(){
                 let _lastword = lastword;
                 match _lastword.parse::<Float>(){
-                    Ok(v) => beats = v,
-                    Err(_) => beats = self.default_duration,
+                    Ok(v) => seconds = v*60.0/self.bpm,
+                    Err(_) => seconds = self.default_duration*60.0/self.bpm,
                 }
             }
-            processed.push((line, beats));
+            processed.push((line, seconds));
         }
         self.contents = VoiceContent::Processed(processed);
     }
