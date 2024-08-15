@@ -199,10 +199,12 @@ impl Voice {
             return Ok(None);
         }
         let mut audio: Option<AudioWave> = None;
-        match &self.contents {
+        match &mut self.contents {
             VoiceContent::Raw(_) => return Ok(None),
-            VoiceContent::Processed(p) => {
-                for line in p {
+            VoiceContent::Processed(ref mut p) => {
+                let clonep = p.clone();
+                for i in 0..p.len(){
+                    let line = &clonep[i];
                     let words = split_by_whitespace(&line.0);
                     if words[0]=="bpm" {
                         match words[1].parse::<Float>(){
@@ -235,6 +237,7 @@ impl Voice {
                     } else if line.0.starts_with("sync") {
                         return Ok(Some( (audio, Some(words[1].clone())) ))
                     }
+                    p.remove(0);
                     todo!()
                 }
             }
