@@ -1,5 +1,6 @@
 use crate::audiowave::AudioWave;
 use crate::definitions::Float;
+use crate::function::Function;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -152,11 +153,19 @@ pub struct Voice {
     bpm: Float,
     tuning: Float,
     default_duration: Float,
-    default_octave: Float,
+    default_octave: u8,
     intensity: Float,
     pub waiting: Option<String>,
 }
 impl Voice {
+    pub fn initialize(&mut self){
+        self.bpm=120.0;
+        self.tuning=440.0;
+        self.default_duration=1.0;
+        self.default_octave=4;
+        self.intensity=1.0;
+        self.waiting=None;
+    }
     pub fn get_time(&mut self) {
         let content: Vec<String>;
         match &self.contents {
@@ -185,29 +194,48 @@ impl Voice {
         }
         self.contents = VoiceContent::Processed(processed);
     }
-    pub fn get_audio(&mut self) -> Option<(AudioWave, Option<String>)> {
+    pub fn get_audio(&mut self) -> Option<(Option<AudioWave>, Option<String>)> {
         if self.waiting.is_some() {
             return None;
         }
+        let mut audio: Option<AudioWave> = None;
         match &self.contents {
             VoiceContent::Raw(_) => return None,
             VoiceContent::Processed(p) => {
                 for line in p {
-                    if line.0.starts_with("bpm") {
-                        todo!()
-                    } else if line.0.starts_with("tuning") {
-                        todo!()
-                    } else if line.0.starts_with("duration") {
-                        todo!()
-                    } else if line.0.starts_with("octave") {
-                        todo!()
-                    } else if line.0.starts_with("intensity") {
-                        todo!()
-                    } else if line.0.starts_with("wait") {
-                        todo!()
+                    let words = split_by_whitespace(&line.0);
+                    if words[0]=="bpm" {
+                        match words[1].parse::<Float>(){
+                            Ok(v) => self.bpm=v,
+                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                        };
+                    } else if words[0]=="tuning" {
+                        match words[1].parse::<Float>(){
+                            Ok(v) => self.tuning=v,
+                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                        };
+                    } else if words[0]=="duration" {
+                        match words[1].parse::<Float>(){
+                            Ok(v) => self.default_duration=v,
+                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                        };
+                    } else if words[0]=="octave" {
+                        match words[1].parse::<u8>(){
+                            Ok(v) => self.default_octave=v,
+                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                        };
+                    } else if words[0]=="intensity" {
+                        match words[1].parse::<Float>(){
+                            Ok(v) => self.intensity=v,
+                            Err(e) => panic!("Invalid syntax at line: {}\n{}", line.0, e),
+                        };
+                    } else if words[0]=="wait" {
+                        self.waiting=Some(words[1].clone());
+                        return Some( (audio, None) );
                     } else if line.0.starts_with("sync") {
-                        todo!()
+                        return Some( (audio, Some(words[1].clone())) )
                     }
+                    todo!()
                 }
             }
         }
