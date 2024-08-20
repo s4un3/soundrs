@@ -463,7 +463,8 @@ impl Voice {
 
 /// If syntax error is found, returns None
 /// Each element in the vector corresponds to one voice and each voice is split by lines
-pub fn preprocess(text: String) -> Result<Vec<Vec<String>>, String> { // there is a bug here, still need to find out what it's causing it
+pub fn preprocess(text: String) -> Result<Vec<Vec<String>>, String> {
+    // there is a bug here, still need to find out what it's causing it
     let voices = text.split('%');
     let mut chunks: Vec<Vec<String>> = Vec::new();
     let mut sections: HashMap<String, Vec<String>, _> = HashMap::new();

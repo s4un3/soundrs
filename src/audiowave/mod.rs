@@ -2,8 +2,10 @@ mod utils;
 
 use crate::definitions::{Float, PI};
 use crate::function::Function;
+use hound;
 use std::error::Error;
 use std::fmt::Display;
+use std::i16;
 use utils::{clip_value, scale_wave};
 
 #[derive(Debug)]
@@ -135,8 +137,25 @@ impl AudioWave {
         todo!()
     }
 
-    pub fn export_wav(&self, path: &std::path::Path) -> Result<(), std::io::Error> {
-        todo!()
+    pub fn export_wav(self, path: &std::path::Path) -> Result<(), hound::Error> {
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: self.get_samplerate(),
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let mut writer = hound::WavWriter::create("sine.wav", spec)?;
+
+        for sample in self.wave.into_iter().map(|x| {
+            (x / self.significance) * (i16::MAX as Float) // Normalize by significance then scale to i16 range
+        }) {
+            writer
+                .write_sample(sample as i16)
+                .expect("should be able to write i16 to 16 bit wav")
+        }
+
+        writer.finalize()?;
+        Ok(())
     }
 
     pub fn from_wav(path: &std::path::Path) -> Result<Self, WavImportError> {
